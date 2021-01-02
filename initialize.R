@@ -22,6 +22,7 @@ ASSET_WEIGHTS <- c(.25, .25, .20, .20, .10)
 # Tidy toolbox ----------------------------------------------------- #
 library(tidyverse)
 library(lubridate)
+library(forcats)
 # Fast computing --------------------------------------------------- #
 library(collapse)    # fast data aggregation
 library(data.table)  # Package loading and data manipulation
@@ -36,7 +37,8 @@ library(tsibble)
 # library(scales)
 # Visualization tools ---------------------------------------------- #
 library(highcharter)
-
+# Self-developed Utility Functions
+source("utility/returns.R")
 
 # =================================================================== #
 # ================== Access Data===================================== 
@@ -73,4 +75,80 @@ get_symbols_price <- function(
     reduce(merge) %>%
     `colnames<-`(ASSET_SYMBOLS)
 }
+
+prices <- get_symbols_price(
+  symbols = ASSET_SYMBOLS,
+  src = "yahoo",
+  from = "2012-12-31", to = "2017-12-31",
+  type = "Ad",
+  auto.assign = TRUE,
+  warnings = FALSE
+)
+
+# =================================================================== #
+# ================== Returns ======================================== 
+# =================================================================== #
+
+# Monthly log returns -- Assets
+asset_returns_xts <- 
+  to_monthly_return_xts(prices, indexAt = "lastof", method = "log")
+asset_returns_tbl <- 
+  to_monthly_return_tbl(prices)
+
+## Monthly log returns -- portfolio
+
+portfolio_returns_xts <- 
+  to_portfolio_returns_xts(asset_returns_xts, ASSET_WEIGHTS, rebalance_mode = "months")
+portfolio_returns_tbl <- 
+  to_portfolio_returns_tbl(asset_returns_tbl, ASSET_WEIGHTS)
+
+# =================================================================== #
+# ================== Risks ========================================== 
+# =================================================================== #
+
+portfolio_sd <- get_portfolio_sd(portfolio_returns_tbl)
+portfolio_mean <- get_portfolio_mean(portfolio_returns_tbl)
+
+portfolio_rolling_sd <- get_portfolio_rolling_sd(portfolio_returns_xts, window = 24)
+
+plot_rolling_volatility(portfolio_rolling_sd)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

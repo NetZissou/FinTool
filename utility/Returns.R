@@ -71,7 +71,7 @@ to_monthly_return_tbl <- function(prices) {
 # reduce(as_tibble(asset_returns_xts), test_fun, .init = h)
 
 
-monthly_return_hchart <- function(returns) {
+plot_monthly_return_hchart <- function(returns) {
   # Get all the assets option
   assets <- names(returns)
   # Set the baseline chart
@@ -90,7 +90,7 @@ monthly_return_hchart <- function(returns) {
   return(hc)
 }
 
-monthly_return_distribution <- function(returns) {
+plot_monthly_return_distribution <- function(returns) {
   
   if (!is_tibble(returns)) {
     returns <- as_tibble(returns, rownames = "date")
@@ -112,7 +112,7 @@ monthly_return_distribution <- function(returns) {
 # ================ Portfolio Returns ================================ 
 # =================================================================== #
 
-portfolio_returns_xts <- function(asset_returns_xts, asset_weights, rebalance_mode = "months") {
+to_portfolio_returns_xts <- function(asset_returns_xts, asset_weights, rebalance_mode = "months") {
   portfolio_returns <- 
     Return.portfolio(
       asset_returns_xts,
@@ -123,7 +123,7 @@ portfolio_returns_xts <- function(asset_returns_xts, asset_weights, rebalance_mo
   return(portfolio_returns)
 }
 
-portfolio_returns_tbl <- function(asset_returns_tbl, asset_weights) {
+to_portfolio_returns_tbl <- function(asset_returns_tbl, asset_weights) {
   
   # to long format
   asset_returns_tbl <- asset_returns_tbl %>%
