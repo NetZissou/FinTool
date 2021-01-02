@@ -1,5 +1,5 @@
 # FinTool
-Interactive toolbox for financial data analysis 
+Interactive toolkit for financial data analysis and portfolio management
 
 ## Returns
 
@@ -8,3 +8,9 @@ Interactive toolbox for financial data analysis
 * Transform daily prices -->   monthly prices
 * Transform monthly prices --> monthly returns 
 * Calculate **portfolio monthly returns** based on asset monthly returns and asset weights
+
+## Risks
+
+* Standard Deviation --> rolling std
+* Skewness --> rolling skweness
+* Kurtosis --> rolling kurtosis
