@@ -17,6 +17,7 @@
 # =================================================================== #
 # ================== Environment Settings =========================== 
 # =================================================================== #
+Sys.setenv(LANG = "en")
 ASSET_SYMBOLS <- c("SPY", "EFA", "IJS", "EEM", "AGG")
 ASSET_WEIGHTS <- c(.25, .25, .20, .20, .10)
 # Tidy toolbox ----------------------------------------------------- #
@@ -106,13 +107,17 @@ portfolio_returns_tbl <-
 # ================== Risks ========================================== 
 # =================================================================== #
 
+# Standard Deviation
 portfolio_sd <- get_portfolio_sd(portfolio_returns_tbl)
 portfolio_mean <- get_portfolio_mean(portfolio_returns_tbl)
 
 portfolio_rolling_sd <- get_portfolio_rolling_sd(portfolio_returns_xts, window = 24)
 
-plot_rolling_volatility(portfolio_rolling_sd)
+# Skewness
+portfolio_skew <- get_portfolio_skew(portfolio_returns_tbl)
+portfolio_rolling_skew <- get_portfolio_rolling_skew(portfolio_returns_xts, window = 24)
 
+# Kurt
 
 
 

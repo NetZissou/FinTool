@@ -32,6 +32,19 @@ get_portfolio_mean <- function(portfolio_returns) {
   return(portfolio_mean)
 }
 
+get_portfolio_median <- function(portfolio_returns) {
+  if ("xts" %in% class(portfolio_returns)) {
+    # xts Object
+    portfolio_median <- as.numeric(median(portfolio_returns))
+  } else if ("tbl" %in% class(portfolio_returns)) {
+    # tbl object
+    portfolio_median <- portfolio_returns %>%
+      summarise(median = median(returns)) %>%
+      pull(median)
+  }
+  return(portfolio_median)
+}
+
 get_portfolio_sd <- function(portfolio_returns) {
   if ("xts" %in% class(portfolio_returns)) {
     # xts Object
@@ -45,7 +58,48 @@ get_portfolio_sd <- function(portfolio_returns) {
   return(portfolio_sd)
 }
 
+# Portfolio rolling statistics -------------------------------------- #
+get_portfolio_rolling_mean <- function(portfolio_returns, window = 24) {
+  if ("xts" %in% class(portfolio_returns)) {
+    portfolio_rolling_mean <- 
+      portfolio_returns %>%
+      rollapply(FUN = mean, width = window) %>%
+      na.omit() %>%
+      `colnames<-`("rolling_mean")
+  } else if ("tbl" %in% class(portfolio_returns)) {
+    portfolio_rolling_mean <- 
+      portfolio_returns %>%
+      mutate(
+        rolling_mean = RcppRoll::roll_mean(returns, n = window, align="right", fill=NA)
+      ) %>%
+      select(date, rolling_mean) %>%
+      na.omit()
+  }
+  return(portfolio_rolling_mean)
+}
+
+get_portfolio_rolling_sd <- function(portfolio_returns, window = 24) {
+  if ("xts" %in% class(portfolio_returns)) {
+    portfolio_rolling_sd <- 
+      portfolio_returns %>%
+      rollapply(FUN = sd, width = window) %>%
+      na.omit() %>%
+      `colnames<-`("rolling_sd")
+  } else if ("tbl" %in% class(portfolio_returns)) {
+    portfolio_rolling_sd <- 
+      portfolio_returns %>%
+      mutate(
+        rolling_sd = RcppRoll::roll_sd(returns, n = window, align="right", fill=NA)
+      ) %>%
+      select(date, rolling_sd) %>%
+      na.omit()
+  }
+  return(portfolio_rolling_sd)
+}
+
 # Visualizations on Volatility -------------------------------------- #
+
+# 1) plot sd overtime
 plot_sd_overtime <- function(portfolio_returns) {
   if ("xts" %in% class(portfolio_returns)) {
     portfolio_returns <- as_tibble(portfolio_returns, rownames = "date")
@@ -105,6 +159,9 @@ plot_sd_overtime_hc <- function(portfolio_returns) {
     hchart("line", hcaes(x = date, y = returns, color = status)) %>%
     hc_tooltip(valueDecimals = 2) %>%
     hc_legend(enabled = TRUE) %>%
+    hc_navigator(enabled = TRUE) %>%
+    hc_scrollbar(enabled = TRUE) %>%
+    hc_exporting(enabled = TRUE) %>%
     hc_xAxis(
       title = FALSE,
       type = "datetime"
@@ -129,6 +186,7 @@ plot_sd_overtime_hc <- function(portfolio_returns) {
     hc_add_theme(hc_theme_flat())
 }
 
+# 2) plot sd comparison
 plot_sd_comparison <- function(asset_returns, asset_weights) {
   if ("xts" %in% class(asset_returns)) {
     asset_returns <- as_tibble(asset_returns, rownames = "date")
@@ -180,9 +238,11 @@ plot_sd_comparison_hc <- function(asset_returns, asset_weights) {
       text = "Portfolio Performance - SD Comparision",
       align = "center"
     ) %>%
-    hc_add_theme(hc_theme_flat())
+    hc_add_theme(hc_theme_flat()) %>%
+    hc_exporting(enabled = TRUE)
 }
 
+# 3) plot return vs risks
 plot_return_vs_risk <- function(asset_returns, asset_weights) {
   
   if ("xts" %in% class(asset_returns)) {
@@ -264,48 +324,11 @@ plot_return_vs_risk_hc <- function(asset_returns, asset_weights) {
       align = "center",
       useHTML = TRUE
     ) %>%
-    hc_add_theme(hc_theme_flat())
+    hc_add_theme(hc_theme_flat()) %>%
+    hc_exporting(enabled = TRUE)
 }
 
-# Portfolio rolling statistics -------------------------------------- #
-get_portfolio_rolling_mean <- function(portfolio_returns, window = 24) {
-    if ("xts" %in% class(portfolio_returns)) {
-      portfolio_rolling_mean <- 
-        portfolio_returns %>%
-        rollapply(FUN = mean, width = window) %>%
-        na.omit() %>%
-        `colnames<-`("rolling_mean")
-    } else if ("tbl" %in% class(portfolio_returns)) {
-      portfolio_rolling_mean <- 
-        portfolio_returns_tbl %>%
-        mutate(
-          rolling_mean = RcppRoll::roll_mean(returns, n = window, align="right", fill=NA)
-        ) %>%
-        select(date, rolling_mean) %>%
-        na.omit()
-    }
-  return(portfolio_rolling_mean)
-}
-
-get_portfolio_rolling_sd <- function(portfolio_returns, window = 24) {
-  if ("xts" %in% class(portfolio_returns)) {
-    portfolio_rolling_sd <- 
-      portfolio_returns %>%
-      rollapply(FUN = sd, width = window) %>%
-      na.omit() %>%
-      `colnames<-`("rolling_sd")
-  } else if ("tbl" %in% class(portfolio_returns)) {
-    portfolio_rolling_sd <- 
-      portfolio_returns_tbl %>%
-      mutate(
-        rolling_sd = RcppRoll::roll_sd(returns, n = window, align="right", fill=NA)
-      ) %>%
-      select(date, rolling_sd) %>%
-      na.omit()
-  }
-  return(portfolio_rolling_sd)
-}
-
+# 4) plot rolling volatility
 plot_rolling_volatility_hc <- function(portfolio_rolling_sd) {
   # Set the baseline chart
   hc <- highchart(type = "stock") %>%
@@ -314,7 +337,7 @@ plot_rolling_volatility_hc <- function(portfolio_rolling_sd) {
     hc_navigator(enabled = TRUE) %>%
     hc_scrollbar(enabled = TRUE) %>%
     hc_exporting(enabled = TRUE) %>%
-    hc_legend(enabled = TRUE) %>%
+    hc_legend(enabled = FALSE) %>%
     hc_yAxis(labels = list(format = "{value}%"), opposite = FALSE)
   # Add rolling series
   hc <- hc %>%
@@ -325,7 +348,7 @@ plot_rolling_volatility_hc <- function(portfolio_rolling_sd) {
 # =================================================================== #
 # ================== Skewness ======================================= 
 # =================================================================== #
-
+# Portfolio Statistics ---------------------------------------------- #
 get_portfolio_skew <- function(portfolio_returns) {
   
   if ("xts" %in% class(portfolio_returns)) {
@@ -341,7 +364,128 @@ get_portfolio_skew <- function(portfolio_returns) {
   return(portfolio_skew)
 }
 
+# Portfolio rolling statistics -------------------------------------- #
+get_portfolio_rolling_skew <- function(portfolio_returns, window = 24) {
+  if ("xts" %in% class(portfolio_returns)) {
+    portfolio_rolling_skew <- 
+      portfolio_returns %>%
+      rollapply(FUN = skewness, width = window) %>%
+      na.omit() %>%
+      `colnames<-`("rolling_skew")
+  } else if ("tbl" %in% class(portfolio_returns)) {
+    portfolio_rolling_skew <- 
+      portfolio_returns %>%
+      mutate(date = ymd(date)) %>%
+      tidyquant::tq_mutate(
+        mutate_fun = rollapply,
+        width = window,
+        FUN = skewness,
+        col_rename = "rolling_skew"
+      ) %>%
+      select(date, rolling_skew) %>%
+      na.omit()
+  }
+  return(portfolio_rolling_skew)
+}
 
+# Visualizations on Volatility -------------------------------------- #
+
+# 1) plot density to illustrate skewness
+plot_skew_density_hc <- function(portfolio_returns) {
+  if ("xts" %in% class(portfolio_returns)) {
+    # xts Object
+    portfolio_returns <- as_tibble(portfolio_returns, rownames = "date")
+  }
+  
+  density <- portfolio_returns %>% pull(returns) %>% density()
+  portfolio_mean <- get_portfolio_mean(portfolio_returns)
+  portfolio_median <- get_portfolio_median(portfolio_returns)
+  skewness_type <- ifelse(portfolio_mean < portfolio_median, 
+                          "negative(left) skewed", "positive(right) skewed")
+  skewness_stat <- get_portfolio_skew(portfolio_returns)
+  
+  hchart(density, type = "area", name = "returns") %>%
+    hc_title(
+      text = "Portfolio Performance - Density Plot Illustrating Skewness",
+      align = "center"
+    ) %>%
+    hc_subtitle(
+      text = paste0("The portfolio returns are ", skewness_type, 
+                    " overtime, with the skewness of: ", 
+                    round(skewness_stat, 4)
+                    ),
+      align = "center"
+    ) %>%
+    hc_xAxis(
+      plotLines = list(
+        # Mean
+        list(
+          label = list(text = "Mean"),
+          color = "black",
+          width = 2,
+          value = portfolio_mean
+        ),
+        # Median
+        list(
+          label = list(text = "Median"),
+          color = "#FF0000",
+          width = 2,
+          value = portfolio_median
+        )
+      )
+    ) %>%
+    hc_tooltip(valueDecimals = 4) %>%
+    hc_add_theme(hc_theme_flat()) %>%
+    hc_exporting(enabled = TRUE)
+}
+# 2) plot skewness comparison
+
+plot_skew_comparison_hc <- function(asset_returns, asset_weights)  {
+  if ("xts" %in% class(asset_returns)) {
+    asset_returns <- as_tibble(asset_returns, rownames = "date")
+  }
+  portfolio_returns <- to_portfolio_returns_tbl(asset_returns, asset_weights)
+  
+  # Portfolio skewness
+  portfolio_returns_skew <- get_portfolio_skew(portfolio_returns)
+  # Asset Sd + Portfolio Sd
+  asset_returns %>%
+    summarise_at(vars(-date), .funs = list(skewness)) %>%
+    add_column(
+      Portfolio = portfolio_returns_skew
+    ) %>%
+    # pivot every columns into a long format
+    pivot_longer(everything(), names_to = "asset", values_to = "skewness") %>%
+    hchart("column", hcaes(x = asset, y = skewness, group = asset)) %>%
+    hc_tooltip(valueDecimals = 4) %>%
+    hc_xAxis(
+      title = list(text = "Asset")
+    ) %>%
+    hc_yAxis(
+      title = list(text = "Skewness")
+    ) %>%
+    hc_title(
+      text = "Portfolio Performance - Skewness Comparision",
+      align = "center"
+    ) %>%
+    hc_add_theme(hc_theme_flat()) %>%
+    hc_exporting(enabled = TRUE)
+}
+# 3) plot rolling skewness
+plot_rolling_skew_hc <- function(portfolio_rolling_skew) {
+  # Set the baseline chart
+  hc <- highchart(type = "stock") %>%
+    hc_title(text = "24-Month Rolling Skewness") %>%
+    hc_add_theme(hc_theme_flat()) %>%
+    hc_navigator(enabled = TRUE) %>%
+    hc_scrollbar(enabled = TRUE) %>%
+    hc_exporting(enabled = TRUE) %>%
+    hc_legend(enabled = FALSE)
+  # Add rolling series
+  hc <- hc %>%
+    hc_add_series(round(portfolio_rolling_skew, 4))
+  return(hc)
+}
 
 
 
