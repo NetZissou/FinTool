@@ -18,6 +18,7 @@
 # =================================================================== #
 # ================== Standard Deviation ============================= 
 # =================================================================== #
+# Portfolio Statistics ---------------------------------------------- #
 get_portfolio_mean <- function(portfolio_returns) {
   if ("xts" %in% class(portfolio_returns)) {
     # xts Object
@@ -44,9 +45,10 @@ get_portfolio_sd <- function(portfolio_returns) {
   return(portfolio_sd)
 }
 
+# Visualizations on Volatility -------------------------------------- #
 plot_sd_overtime <- function(portfolio_returns) {
   if ("xts" %in% class(portfolio_returns)) {
-    portfolio_returns <- as_tibble(rownames = "date")
+    portfolio_returns <- as_tibble(portfolio_returns, rownames = "date")
   }
   # Get portfolio mean & sd
   portfolio_sd <- get_portfolio_sd(portfolio_returns)
@@ -81,9 +83,55 @@ plot_sd_overtime <- function(portfolio_returns) {
     theme(plot.title = element_text(hjust = 0.5))
 }
 
+plot_sd_overtime_hc <- function(portfolio_returns) {
+  if ("xts" %in% class(portfolio_returns)) {
+    portfolio_returns <- as_tibble(portfolio_returns, rownames = "date")
+  }
+  # Get portfolio mean & sd
+  portfolio_sd <- get_portfolio_sd(portfolio_returns)
+  portfolio_mean <- get_portfolio_mean(portfolio_returns)
+  
+  # Color the observations
+  levels <- c("Overwhelming", "Expected", "Warning")
+  portfolio_returns %>%
+    mutate(
+      date = ymd(date),
+      status = case_when(
+        returns <= (portfolio_mean - portfolio_sd) ~ factor("Warning", levels),
+        returns >= (portfolio_mean + portfolio_sd) ~ factor("Overwhelming", levels),
+        TRUE ~ factor("Expected", levels)
+      )
+    ) %>%
+    hchart("line", hcaes(x = date, y = returns, color = status)) %>%
+    hc_tooltip(valueDecimals = 2) %>%
+    hc_legend(enabled = TRUE) %>%
+    hc_xAxis(
+      title = FALSE,
+      type = "datetime"
+    ) %>%
+    hc_yAxis(
+      title = list(text = "Monthly Log Returns"),
+      plotBands = list(
+        list(
+          from = portfolio_mean - portfolio_sd,
+          to = portfolio_mean + portfolio_sd,
+          color = hex_to_rgba("green", 0.1),
+          label = list(text = "Within one Std Region"),
+          # the zIndex is used to put the label text over the grid lines 
+          zIndex = 1
+        )
+      )
+    ) %>%
+    hc_title(
+      text = "Portfolio Performance - SD",
+      align = "center"
+    ) %>%
+    hc_add_theme(hc_theme_flat())
+}
+
 plot_sd_comparison <- function(asset_returns, asset_weights) {
   if ("xts" %in% class(asset_returns)) {
-    asset_returns <- as_tibble(rownames = "date")
+    asset_returns <- as_tibble(asset_returns, rownames = "date")
   }
   portfolio_returns <- to_portfolio_returns_tbl(asset_returns, asset_weights)
   # Portfolio Sd
@@ -105,10 +153,40 @@ plot_sd_comparison <- function(asset_returns, asset_weights) {
     scale_y_continuous(labels = scales::percent_format(accuracy = 2))
 }
 
+plot_sd_comparison_hc <- function(asset_returns, asset_weights) {
+  if ("xts" %in% class(asset_returns)) {
+    asset_returns <- as_tibble(asset_returns, rownames = "date")
+  }
+  portfolio_returns <- to_portfolio_returns_tbl(asset_returns, asset_weights)
+  # Portfolio Sd
+  portfolio_returns_sd <- get_portfolio_sd(portfolio_returns)
+  # Asset Sd + Portfolio Sd
+  asset_returns %>%
+    summarise_at(vars(-date), .funs = list(sd)) %>%
+    add_column(
+      Portfolio = portfolio_returns_sd
+    ) %>%
+    # pivot every columns into a long format
+    pivot_longer(everything(), names_to = "asset", values_to = "sd") %>%
+    hchart("column", hcaes(x = asset, y = sd, group = asset)) %>%
+    hc_tooltip(valueDecimals = 4) %>%
+    hc_xAxis(
+      title = list(text = "Asset")
+    ) %>%
+    hc_yAxis(
+      title = list(text = "Standard Deviation")
+    ) %>%
+    hc_title(
+      text = "Portfolio Performance - SD Comparision",
+      align = "center"
+    ) %>%
+    hc_add_theme(hc_theme_flat())
+}
+
 plot_return_vs_risk <- function(asset_returns, asset_weights) {
   
   if ("xts" %in% class(asset_returns)) {
-    asset_returns <- as_tibble(rownames = "date")
+    asset_returns <- as_tibble(asset_returns, rownames = "date")
   }
   portfolio_returns <- to_portfolio_returns_tbl(asset_returns, asset_weights)
   # Portfolio sd & mean
@@ -142,6 +220,54 @@ plot_return_vs_risk <- function(asset_returns, asset_weights) {
     scale_x_continuous(labels = scales::percent_format(accuracy = 2))
 }
 
+plot_return_vs_risk_hc <- function(asset_returns, asset_weights) {
+  
+  if ("xts" %in% class(asset_returns)) {
+    asset_returns <- as_tibble(asset_returns, rownames = "date")
+  }
+  portfolio_returns <- to_portfolio_returns_tbl(asset_returns, asset_weights)
+  # Portfolio sd & mean
+  portfolio_returns_sd <- get_portfolio_sd(portfolio_returns)
+  portfolio_returns_mean <- get_portfolio_mean(portfolio_returns)
+  # Asset sd & mean
+  asset_returns %>%
+    summarise_at(vars(-date), .funs = list(sd)) %>%
+    add_column(
+      Portfolio = portfolio_returns_sd
+    ) %>%
+    pivot_longer(everything(), names_to = "asset", values_to = "sd") %>%
+    left_join(
+      asset_returns %>%
+        summarise_at(vars(-date), .funs = list(mean)) %>%
+        add_column(
+          Portfolio = portfolio_returns_mean
+        ) %>%
+        pivot_longer(everything(), names_to = "asset", values_to = "mean"),
+      by = "asset"
+    ) %>%
+    hchart("scatter", hcaes(x = round(sd*100, 2), y = mean, group = asset, size  = log(mean/sd))) %>%
+    hc_tooltip(valueDecimals = 4) %>%
+    hc_xAxis(
+      title = list(text = "Standard Deivation"),
+      labels = list(format = "{value}%"), opposite = FALSE
+    ) %>%
+    hc_yAxis(
+      title = list(text = "Expected Returns")
+    ) %>%
+    hc_title(
+      text = "Portfolio Performance - Expected Monthly Return versus Risk",
+      align = "center"
+    ) %>%
+    hc_subtitle(
+      text = "Bubble size is calculated based on the ratio between the expected value and standard deviation.</br>
+      Overall, the asset with higher expected returns and lower volatility is preferred.",
+      align = "center",
+      useHTML = TRUE
+    ) %>%
+    hc_add_theme(hc_theme_flat())
+}
+
+# Portfolio rolling statistics -------------------------------------- #
 get_portfolio_rolling_mean <- function(portfolio_returns, window = 24) {
     if ("xts" %in% class(portfolio_returns)) {
       portfolio_rolling_mean <- 
@@ -180,7 +306,7 @@ get_portfolio_rolling_sd <- function(portfolio_returns, window = 24) {
   return(portfolio_rolling_sd)
 }
 
-plot_rolling_volatility <- function(portfolio_rolling_sd) {
+plot_rolling_volatility_hc <- function(portfolio_rolling_sd) {
   # Set the baseline chart
   hc <- highchart(type = "stock") %>%
     hc_title(text = "24-Month Rolling Volatility") %>%
@@ -199,6 +325,32 @@ plot_rolling_volatility <- function(portfolio_rolling_sd) {
 # =================================================================== #
 # ================== Skewness ======================================= 
 # =================================================================== #
+
+get_portfolio_skew <- function(portfolio_returns) {
+  
+  if ("xts" %in% class(portfolio_returns)) {
+    # xts Object
+    portfolio_skew <- skewness(portfolio_returns$returns)
+  } else if ("tbl" %in% class(portfolio_returns)) {
+    # tbl object
+    portfolio_skew <-
+      portfolio_returns %>%
+      summarise_at(vars(returns), .funs = list(skewness)) %>%
+      pull()
+  }
+  return(portfolio_skew)
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
