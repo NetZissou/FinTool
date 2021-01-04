@@ -117,43 +117,9 @@ portfolio_rolling_sd <- get_portfolio_rolling_sd(portfolio_returns_xts, window =
 portfolio_skew <- get_portfolio_skew(portfolio_returns_tbl)
 portfolio_rolling_skew <- get_portfolio_rolling_skew(portfolio_returns_xts, window = 24)
 
-# Kurt
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Kurtosis
+portfolio_kurtosis <- get_portfolio_kurtosis(portfolio_returns_tbl)
+portfolio_rolling_kurtosis <- get_portfolio_rolling_kurtosis(portfolio_returns_xts, window = 24)
 
 
 

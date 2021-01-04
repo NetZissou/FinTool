@@ -58,6 +58,32 @@ get_portfolio_sd <- function(portfolio_returns) {
   return(portfolio_sd)
 }
 
+get_portfolio_min <- function(portfolio_returns) {
+  if ("xts" %in% class(portfolio_returns)) {
+    # xts Object
+    portfolio_min <- as.numeric(min(portfolio_returns))
+  } else if ("tbl" %in% class(portfolio_returns)) {
+    # tbl object
+    portfolio_min <- portfolio_returns %>%
+      summarise(min = min(returns)) %>%
+      pull(min)
+  }
+  return(portfolio_min)
+}
+
+get_portfolio_max <- function(portfolio_returns) {
+  if ("xts" %in% class(portfolio_returns)) {
+    # xts Object
+    portfolio_max <- as.numeric(max(portfolio_returns))
+  } else if ("tbl" %in% class(portfolio_returns)) {
+    # tbl object
+    portfolio_max <- portfolio_returns %>%
+      summarise(max = max(returns)) %>%
+      pull(max)
+  }
+  return(portfolio_max)
+}
+
 # Portfolio rolling statistics -------------------------------------- #
 get_portfolio_rolling_mean <- function(portfolio_returns, window = 24) {
   if ("xts" %in% class(portfolio_returns)) {
@@ -487,24 +513,142 @@ plot_rolling_skew_hc <- function(portfolio_rolling_skew) {
   return(hc)
 }
 
+# =================================================================== #
+# ================== Kurtosis ======================================= 
+# =================================================================== #
+# Portfolio Statistics ---------------------------------------------- #
+get_portfolio_kurtosis <- function(portfolio_returns) {
+  if ("xts" %in% class(portfolio_returns)) {
+    # xts Object
+    portfolio_kurtosis <- kurtosis(portfolio_returns$returns)
+  } else if ("tbl" %in% class(portfolio_returns)) {
+    # tbl object
+    portfolio_kurtosis <-
+      portfolio_returns %>%
+      summarise_at(vars(returns), .funs = list(kurtosis)) %>%
+      pull()
+  }
+  return(portfolio_kurtosis)
+}
+# Portfolio rolling statistics -------------------------------------- #
+get_portfolio_rolling_kurtosis <- function(portfolio_returns, window = 24) {
+  if ("xts" %in% class(portfolio_returns)) {
+    portfolio_rolling_kurtosis <- 
+      portfolio_returns %>%
+      rollapply(FUN = kurtosis, width = window) %>%
+      na.omit() %>%
+      `colnames<-`("rolling_kurtosis")
+  } else if ("tbl" %in% class(portfolio_returns)) {
+    portfolio_rolling_kurtosis <- 
+      portfolio_returns %>%
+      mutate(date = ymd(date)) %>%
+      tidyquant::tq_mutate(
+        mutate_fun = rollapply,
+        width = window,
+        FUN = kurtosis,
+        col_rename = "rolling_kurtosis"
+      ) %>%
+      select(date, rolling_kurtosis) %>%
+      na.omit()
+  }
+  return(portfolio_rolling_kurtosis)
+}
+# Visualizations on Volatility -------------------------------------- #
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# 1) plot density to illustrate skewness
+plot_kurtosis_density_hc <- function(portfolio_returns) {
+  base_hc <- plot_skew_density_hc(portfolio_returns)
+  # Statistics
+  portfolio_min <- get_portfolio_min(portfolio_returns)
+  portfolio_max <- get_portfolio_max(portfolio_returns)
+  portfolio_mean <- get_portfolio_mean(portfolio_returns)
+  portfolio_sd <- get_portfolio_sd(portfolio_returns)
+  portfolio_kurtosis <- get_portfolio_kurtosis(portfolio_returns)
+  kurtosis_type <- ifelse(portfolio_kurtosis > 3, "positive kurtosis", "negative kurtosis")
+  kurtosis_type_text <- ifelse(portfolio_kurtosis > 3, "higher risks", "lower risks")
+  
+  base_hc %>%
+    hc_title(text = "Portfolio Performance - Density Plot Illustrating Kurtosis") %>%
+    hc_subtitle(
+      text = paste0("The portfolio returns show ", kurtosis_type, "</br>",
+             "The ", round(portfolio_kurtosis,2), 
+             "kurtosis statistic value suggests that the portfolio tends to have ", kurtosis_type_text,
+             " than normal."),
+      useHTML = TRUE
+    ) %>%
+    # hc_add_series(
+    #   density(rnorm(1000)), type = "area",
+    #   color = "#B71C1C", 
+    #   name = "Normal"
+    # )
+    hc_xAxis(
+      plotBands = list(
+        list(
+          from = -0.1,
+          to = portfolio_mean - 2*portfolio_sd,
+          color = hex_to_rgba("steelblue", 0.1),
+          label = list(text = "Tail: Mean-2*SD"),
+          # the zIndex is used to put the label text over the grid lines
+          zIndex = 1
+        ),
+        list(
+          from = portfolio_mean + 2*portfolio_sd,
+          to = 0.1,
+          color = hex_to_rgba("steelblue", 0.1),
+          label = list(text = "Tail: Mean+2*SD"),
+          # the zIndex is used to put the label text over the grid lines
+          zIndex = 1
+        )
+      )
+    )
+}
+# 2) plot skewness comparison
+plot_kurtosis_comparison_hc <- function(asset_returns, asset_weights)  {
+  if ("xts" %in% class(asset_returns)) {
+    asset_returns <- as_tibble(asset_returns, rownames = "date")
+  }
+  portfolio_returns <- to_portfolio_returns_tbl(asset_returns, asset_weights)
+  
+  # Portfolio kurtosis
+  portfolio_returns_kurtosis <- get_portfolio_kurtosis(portfolio_returns)
+  # Asset kurtosis + Portfolio kurtosis
+  asset_returns %>%
+    summarise_at(vars(-date), .funs = list(kurtosis)) %>%
+    add_column(
+      Portfolio = portfolio_returns_kurtosis
+    ) %>%
+    # pivot every columns into a long format
+    pivot_longer(everything(), names_to = "asset", values_to = "kurtosis") %>%
+    hchart("column", hcaes(x = asset, y = kurtosis, group = asset)) %>%
+    hc_tooltip(valueDecimals = 4) %>%
+    hc_xAxis(
+      title = list(text = "Asset")
+    ) %>%
+    hc_yAxis(
+      title = list(text = "Kurtosis")
+    ) %>%
+    hc_title(
+      text = "Portfolio Performance - Kurtosis Comparision",
+      align = "center"
+    ) %>%
+    hc_add_theme(hc_theme_flat()) %>%
+    hc_exporting(enabled = TRUE)
+}
+# 3) plot rolling skewness
+plot_rolling_kurtosis_hc <- function(portfolio_rolling_kurtosis) {
+  # Set the baseline chart
+  hc <- highchart(type = "stock") %>%
+    hc_title(text = "24-Month Rolling Kurtosis") %>%
+    hc_add_theme(hc_theme_flat()) %>%
+    hc_navigator(enabled = TRUE) %>%
+    hc_scrollbar(enabled = TRUE) %>%
+    hc_exporting(enabled = TRUE) %>%
+    hc_legend(enabled = FALSE)
+  # Add rolling series
+  hc <- hc %>%
+    hc_add_series(round(portfolio_rolling_kurtosis, 4))
+  return(hc)
+}
 
 
 
