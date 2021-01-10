@@ -20,6 +20,8 @@
 Sys.setenv(LANG = "en")
 ASSET_SYMBOLS <- c("SPY", "EFA", "IJS", "EEM", "AGG")
 ASSET_WEIGHTS <- c(.25, .25, .20, .20, .10)
+START_DATE <- "2012-12-31"
+STOP_DATE <- "2017-12-31"
 # Tidy toolbox ----------------------------------------------------- #
 library(tidyverse)
 library(lubridate)
@@ -67,7 +69,7 @@ get_symbols_price <- function(
              src = src,
              from = from, to = to,
              auto.assign = auto.assign,
-             warnings = FALSE
+             warnings = warnings
   ) %>%
     # Adjusted Price or Closed Price
     purrr::when(
@@ -75,13 +77,13 @@ get_symbols_price <- function(
       type == "Cl" ~ map(., ~Cl(get(.x)))
     ) %>%
     reduce(merge) %>%
-    `colnames<-`(ASSET_SYMBOLS)
+    `colnames<-`(symbols)
 }
 
 prices <- get_symbols_price(
   symbols = ASSET_SYMBOLS,
   src = "yahoo",
-  from = "2012-12-31", to = "2017-12-31",
+  from = START_DATE, to = STOP_DATE,
   type = "Ad",
   auto.assign = TRUE,
   warnings = FALSE
@@ -103,7 +105,7 @@ portfolio_returns_xts <-
   to_portfolio_returns_xts(asset_returns_xts, ASSET_WEIGHTS, rebalance_mode = "months")
 portfolio_returns_tbl <- 
   to_portfolio_returns_tbl(asset_returns_tbl, ASSET_WEIGHTS)
-
+ 
 # =================================================================== #
 # ================== Risks ========================================== 
 # =================================================================== #
@@ -121,6 +123,33 @@ portfolio_rolling_skew <- get_portfolio_rolling_skew(portfolio_returns_xts, wind
 # Kurtosis
 portfolio_kurtosis <- get_portfolio_kurtosis(portfolio_returns_tbl)
 portfolio_rolling_kurtosis <- get_portfolio_rolling_kurtosis(portfolio_returns_xts, window = 24)
+
+# =================================================================== #
+# ================== Sharpe Ratio ========================================== 
+# =================================================================== #
+
+# choose a risk-free rate (RFR) ------------------------------------- #
+RFR <- 0.0003 # 0.3%
+
+portfolio_sharpe_ratio <- 
+  get_portfolio_sharpe_ratio(portfolio_returns_xts, risk_free_rate = RFR)
+
+market_sharpe_ratio <- 
+  get_market_sharpe_ratio(target = "SPY", risk_free_rate = RFR, 
+                                               from = START_DATE, to = STOP_DATE)
+portfolio_rolling_sharpe_ratio <- 
+  get_portfolio_rolling_sharpe_ratio(portfolio_returns_xts, risk_free_rate = RFR, window = 24)
+
+plot_sharpe_ratio_comparison_hc(portfolio_returns_xts)
+
+
+
+
+
+
+
+
+
 
 
 
