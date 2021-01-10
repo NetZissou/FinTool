@@ -54,7 +54,7 @@ get_market_sharpe_ratio <- function(target = "SPY", risk_free_rate = RFR,
   market_returns <- to_monthly_return_xts(market_prices, indexAt = "lastof", method = "log")
   
   market_sharpe_ratio <- 
-    get_sharpe_ratio(market_returns, risk_free_rate)
+    get_portfolio_sharpe_ratio(market_returns, risk_free_rate)
   
   return(market_sharpe_ratio)
 }

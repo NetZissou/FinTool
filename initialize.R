@@ -27,13 +27,13 @@ library(tidyverse)
 library(lubridate)
 library(forcats)
 # Fast computing --------------------------------------------------- #
-library(collapse)    # fast data aggregation
-library(data.table)  # Package loading and data manipulation
-library(vroom)       # Package loading vroom vroom!
+#library(collapse)    # fast data aggregation
+#library(data.table)  # Package loading and data manipulation
+#library(vroom)       # Package loading vroom vroom!
 # Finance related -------------------------------------------------- #
 library(quantmod)
 library(PerformanceAnalytics)
-library(tidyquant)
+#library(tidyquant)
 # Time series related ---------------------------------------------- #
 # library(timetk)
 # library(tsibble)
