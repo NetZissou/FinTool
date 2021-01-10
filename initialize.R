@@ -33,13 +33,14 @@ library(quantmod)
 library(PerformanceAnalytics)
 library(tidyquant)
 # Time series related ---------------------------------------------- #
-library(timetk)
-library(tsibble)
+# library(timetk)
+# library(tsibble)
 # library(scales)
 # Visualization tools ---------------------------------------------- #
 library(highcharter)
 # Self-developed Utility Functions
 source("utility/returns.R")
+source("utility/risks.R")
 
 # =================================================================== #
 # ================== Access Data===================================== 

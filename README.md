@@ -14,3 +14,10 @@ Interactive toolkit for financial data analysis and portfolio management
 * Standard Deviation --> rolling std
 * Skewness --> rolling skweness
 * Kurtosis --> rolling kurtosis
+
+## Exploratory Modeling
+
+* Sharpe Ratio, and the rolling Sharpe Ratio
+* CAPM beta
+* Fama-French 3-Factor Model, and the rolling Fama-French 3-Factor model
+
