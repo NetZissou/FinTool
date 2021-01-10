@@ -43,6 +43,7 @@ library(highcharter)
 # Self-developed Utility Functions
 source("utility/returns.R")
 source("utility/risks.R")
+source("utility/Sharpe_Ratio.R")
 
 # =================================================================== #
 # ================== Access Data===================================== 
