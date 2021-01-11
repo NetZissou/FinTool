@@ -46,35 +46,35 @@ to_monthly_return_tbl <- function(prices) {
   #   fselect(-year, -month)
   
   # Tidyverse by hand calculate
-  # asset_returns <- prices %>%
-  #   # Get the last day of each month
-  #   # to.monthly(indexAt = "lastof", OHLC = FALSE) %>%
-  #   as_tibble(rownames = "date") %>%
-  #   group_by(year = year(date), month = month(date)) %>%
-  #   filter(date == max(date)) %>%
-  #   ungroup() %>%
-  #   select(-year, -month) %>%
-  #   # Calculate log monthly returns
-  #   pivot_longer(!date, values_to = "prices", names_to = "asset") %>%
-  #   group_by(asset) %>%
-  #   mutate(returns = (log(prices) - log(lag(prices)))) %>%
-  #   select(-prices) %>%
-  #   pivot_wider(names_from = asset, values_from = returns) %>%
-  #   na.omit()
-  
-  # TODO: inconsistent date with xts objects
-  asset_returns <- xts_to_tbl(prices) %>%
-    pivot_longer(!date, names_to = "asset", values_to = "prices") %>%
+  asset_returns <- prices %>%
+    # Get the last day of each month
+    # to.monthly(indexAt = "lastof", OHLC = FALSE) %>%
+    as_tibble(rownames = "date") %>%
+    group_by(year = year(date), month = month(date)) %>%
+    filter(date == max(date)) %>%
+    ungroup() %>%
+    mutate(date = rollback(ceiling_date(ymd(date), unit = "month"))) %>%
+    select(-year, -month) %>%
+    # Calculate log monthly returns
+    pivot_longer(!date, values_to = "prices", names_to = "asset") %>%
     group_by(asset) %>%
-    tidyquant::tq_transmute(
-      mutate_fun = periodReturn,
-      period = "monthly",
-      type = "log",
-      col_rename = "returns"
-    ) %>%
+    mutate(returns = (log(prices) - log(lag(prices)))) %>%
+    select(-prices) %>%
     pivot_wider(names_from = asset, values_from = returns) %>%
-    select(date, everything()) %>%
-    slice(-1)
+    na.omit()
+  
+  # asset_returns <- xts_to_tbl(prices) %>%
+  #   pivot_longer(!date, names_to = "asset", values_to = "prices") %>%
+  #   group_by(asset) %>%
+  #   tidyquant::tq_transmute(
+  #     mutate_fun = periodReturn,
+  #     period = "monthly",
+  #     type = "log",
+  #     col_rename = "returns"
+  #   ) %>%
+  #   pivot_wider(names_from = asset, values_from = returns) %>%
+  #   select(date, everything()) %>%
+  #   slice(-1)
     
   return(asset_returns)
 }

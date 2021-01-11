@@ -40,11 +40,11 @@ library(PerformanceAnalytics)
 # library(scales)
 # Visualization tools ---------------------------------------------- #
 library(highcharter)
-# Self-developed Utility Functions
+# Self-developed Utility Functions --------------------------------- #
 source("utility/returns.R")
 source("utility/risks.R")
 source("utility/sharpe_ratio.R")
-
+source("utility/CAPM.R")
 # =================================================================== #
 # ================== Access Data===================================== 
 # =================================================================== #
