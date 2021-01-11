@@ -41,8 +41,9 @@ get_portfolio_sharpe_ratio <- function(portfolio_returns, risk_free_rate = RFR) 
   return(portfolio_sharpe_ratio)
 }
 
-get_market_sharpe_ratio <- function(target = "SPY", risk_free_rate = RFR, 
-                                    from = START_DATE, to = STOP_DATE) {
+get_market_returns <- function(target = "SPY",  
+                               from = START_DATE, to = STOP_DATE) {
+  
   market_prices <- get_symbols_price(
     symbols = target,
     src = "yahoo",
@@ -52,6 +53,13 @@ get_market_sharpe_ratio <- function(target = "SPY", risk_free_rate = RFR,
     warnings = FALSE
   )
   market_returns <- to_monthly_return_xts(market_prices, indexAt = "lastof", method = "log")
+  return(market_returns)
+}
+
+get_market_sharpe_ratio <- function(target = "SPY", risk_free_rate = RFR, 
+                                    from = START_DATE, to = STOP_DATE) {
+  
+  market_returns <- get_market_returns(target = "SPY", from = from, to = to)
   
   market_sharpe_ratio <- 
     get_portfolio_sharpe_ratio(market_returns, risk_free_rate)
@@ -99,16 +107,7 @@ plot_sharpe_ratio_comparison_hc <- function(
     get_portfolio_sharpe_ratio(portfolio_returns, risk_free_rate = RFR)
   
   # Market sharpe ratio
-  market_prices <- get_symbols_price(
-    symbols = target,
-    src = "yahoo",
-    from = from, to = to,
-    type = "Ad",
-    auto.assign = TRUE,
-    warnings = FALSE
-  )
-  market_returns <- to_monthly_return_xts(market_prices, indexAt = "lastof", method = "log")
-  
+  market_returns <- get_market_returns(target = "SPY", from = from, to = to)
   market_rolling_sharpe_ratio <- get_portfolio_rolling_sharpe_ratio(market_returns)
   market_sharpe_ratio <- get_market_sharpe_ratio(target = "SPY", risk_free_rate = RFR, 
                                                  from = from, to = to)
@@ -150,29 +149,6 @@ plot_sharpe_ratio_comparison_hc <- function(
     )
   return(hc)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

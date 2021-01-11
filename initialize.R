@@ -81,6 +81,18 @@ get_symbols_price <- function(
     `colnames<-`(symbols)
 }
 
+xts_to_tbl <- function(object) {
+  
+  if("xts" %in% class(object)) {
+    object<- object %>%
+      as_tibble(
+        rownames = "date"
+      ) %>%
+      mutate(date= ymd(date))
+  }
+  return(object)
+}
+
 prices <- get_symbols_price(
   symbols = ASSET_SYMBOLS,
   src = "yahoo",
@@ -106,7 +118,10 @@ portfolio_returns_xts <-
   to_portfolio_returns_xts(asset_returns_xts, ASSET_WEIGHTS, rebalance_mode = "months")
 portfolio_returns_tbl <- 
   to_portfolio_returns_tbl(asset_returns_tbl, ASSET_WEIGHTS)
- 
+market_returns_xts <- 
+  get_market_returns(target = "SPY",  
+                     from = START_DATE, to = STOP_DATE)
+  
 # =================================================================== #
 # ================== Risks ========================================== 
 # =================================================================== #
@@ -126,7 +141,7 @@ portfolio_kurtosis <- get_portfolio_kurtosis(portfolio_returns_tbl)
 portfolio_rolling_kurtosis <- get_portfolio_rolling_kurtosis(portfolio_returns_xts, window = 24)
 
 # =================================================================== #
-# ================== Sharpe Ratio ========================================== 
+# ================== Sharpe Ratio ===================================
 # =================================================================== #
 
 # choose a risk-free rate (RFR) ------------------------------------- #
@@ -143,10 +158,12 @@ portfolio_rolling_sharpe_ratio <-
 
 plot_sharpe_ratio_comparison_hc(portfolio_returns_xts)
 
+# =================================================================== #
+# ================== CAPM ===========================================
+# =================================================================== #
 
-
-
-
+CAPM_beta <- get_CAPM_beta(portfolio_returns_xts, market_returns_xts)
+plot_CAPM_hc(portfolio_returns_tbl, market_returns_xts)
 
 
 
