@@ -86,12 +86,12 @@ to_monthly_return_tbl <- function(prices) {
 # reduce(as_tibble(asset_returns_xts), test_fun, .init = h)
 
 
-plot_monthly_return_hchart <- function(returns) {
+plot_monthly_return_hchart <- function(returns, title = "Monthly Log Returns") {
   # Get all the assets option
   assets <- names(returns)
   # Set the baseline chart
   hc <- highchart(type = "stock") %>%
-    hc_title(text = "Monthly Log Returns") %>%
+    hc_title(text = title) %>%
     hc_add_theme(hc_theme_flat()) %>%
     hc_navigator(enabled = TRUE) %>%
     hc_scrollbar(enabled = TRUE) %>%

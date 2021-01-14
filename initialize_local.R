@@ -132,10 +132,16 @@ portfolio_mean <- get_portfolio_mean(portfolio_returns_tbl)
 
 portfolio_rolling_sd <- get_portfolio_rolling_sd(portfolio_returns_xts, window = 24)
 
+plot_sd_overtime_hc(portfolio_returns_tbl)
+plot_sd_comparison_hc(asset_returns_tbl, ASSET_WEIGHTS)
+plot_return_vs_risk_hc(asset_returns_tbl, ASSET_WEIGHTS)
 # Skewness
 portfolio_skew <- get_portfolio_skew(portfolio_returns_tbl)
 portfolio_rolling_skew <- get_portfolio_rolling_skew(portfolio_returns_xts, window = 24)
 
+plot_skew_density_hc(portfolio_returns_tbl)
+plot_skew_comparison_hc(asset_returns_tbl, ASSET_WEIGHTS)
+plot_rolling_skew_hc(portfolio_rolling_skew)
 # Kurtosis
 portfolio_kurtosis <- get_portfolio_kurtosis(portfolio_returns_tbl)
 portfolio_rolling_kurtosis <- get_portfolio_rolling_kurtosis(portfolio_returns_xts, window = 24)
