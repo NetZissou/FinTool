@@ -79,4 +79,9 @@ xts_to_tbl <- function(object) {
   return(object)
 }
 
-
+# =================================================================== #
+# ================== Load Fund Choices ============================== 
+# =================================================================== #
+mutual_funds <- read_csv("data/mutual_funds.csv")
+# INITIAL_ASSET_CHOICES <- mutual_funds %>% pull(Symbol)
+INITIAL_ASSET_CHOICES <- c("SPY", "EFA", "IJS", "EEM", "AGG", "AAPL")

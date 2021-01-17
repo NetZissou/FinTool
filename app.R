@@ -3,11 +3,10 @@
 # ======================================================================= #
 library(shiny)
 library(shinydashboard)
+library(shinydashboardPlus)
 library(shinyWidgets)
 library(dashboardthemes)
 source("initialize.R")
-INITIAL_ASSET_CHOICES <- c("SPY", "EFA", "IJS", "EEM", "AGG")
-INITIAL_ASSET_WEIGHTS <- c(0.25, 0.25, 0.2, 0.2, 0.1)
 # ======================================================================= #
 # ========================= UI Elements =================================
 # ======================================================================= #
@@ -65,16 +64,16 @@ asset_choice <- function(box_width = 12, collapsible = F) {
                actionBttn(
                  inputId = "insertVarBtn",
                  label = "Add",
-                 style = "jelly", 
-                 color = "primary"
+                 style = "unite", 
+                 color = "danger"
                )),
         column(width = 4, # REMOVE VARIABLE BUTTON
                #actionButton(inputId = 'removeVarBtn', label = "Remove", width = "100%")
                actionBttn(
                  inputId = "removeVarBtn",
                  label = "Remove",
-                 style = "jelly", 
-                 color = "primary"
+                 style = "unite", 
+                 color = "danger"
                )),
         column(width = 4, # Fetch Data
                #actionButton(inputId = 'fetchData', label = "Fetch/Update", width = "100%")
@@ -160,106 +159,140 @@ rolling_kurtosis_hchart <- function(box_width = 6) {
       highchartOutput("rolling_kurtosis"))
 }
 
+# Sharpe Ratio 
+
 # ======================================================================= #
 # ========================== Shiny UI ===================================
 # ======================================================================= #
 
-ui <- dashboardPage(
-  dashboardHeader(titleWidth = 350, 
-                  title = "Portfolio Terminal Lite"
-                    # shinyDashboardLogo(
-                    # theme = "flat_red",
-                    # boldText = "Portfolio Terminal",
-                    # mainText = "Lite",
-                    # badgeText = "v1.1"
-                    # )
-                  ),
-  dashboardSidebar(
-    disable = T
-  ),
-  dashboardBody(
-    # theme
-    # shinyDashboardThemes(
-    #   theme = "flat_red"
-    # ),
-    fluidRow(
-      # column(width = 3,
-      #        portfolio_table(),
-      #        asset_choice(collapsible = T)
-      #        ),
-      column(width = 1,
-             dropdownButton(
-               portfolio_table(),
-               asset_choice(collapsible = T),
-               circle = TRUE, status = "info",
-               icon = icon("folder", lib = "font-awesome"), width = "700px",
-               
-               tooltip = tooltipOptions(title = "Manage Portfolio")
-              ),
-             # ------------ break -------------------------------- #
-             br(),
-             br(),
-             dropdownButton(
-               h3("word"),
-               circle = TRUE, status = "info",
-               icon = icon("gear"), width = "700px",
-               
-               tooltip = tooltipOptions(title = "Manage Portfolio")
-              )
-             ),
-      column(width = 5,
-             tabBox(
-               title = "Returns",
-               # The id lets us use input$tabset1 on the server to find the current tab
-               id = "tabset1", height = "100%", width = "100%",
-               tabPanel("Asset Returns", 
-                        fluidRow(
-                          asset_return_hchart(box_width = 12)
-                          )
-                        ),
-               tabPanel("Portfolio Returns", 
-                        fluidRow(
-                          portfolio_return_hchart(box_width = 12)
-                          )
-                        )
-              )
-             ),
-      column(width = 6,
-             tabBox(
-               title = "Risks",
-               # The id lets us use input$tabset1 on the server to find the current tab
-               id = "tabset2", height = "100%", width = "100%",
-               tabPanel("Votility", 
-                        fluidRow(
-                          # column(width = 6, sd_overtime_hchart()),
-                          # column(width = 6, 
-                          #        return_vs_risk_hchart(),
-                          #        sd_comparision_hchart()
-                          #        )
-                          return_vs_risk_hchart(box_width = 7),
-                          sd_comparision_hchart(box_width = 5),
-                          sd_overtime_hchart(box_width = 12)
-                          # box(width = 12, rolling_volatility_hchart())
-                          )
-                        ),
-               tabPanel("Skewness", 
-                        fluidRow(
-                          skew_density_hchart(box_width = 7),
-                          skew_comparison_hchart(box_width = 5),
-                          rolling_skew_hchart(box_width = 12)
-                          )
-                        ),
-               tabPanel("Kurtosis",
-                        fluidRow(
-                          kurtosis_density_hc(box_width = 7),
-                          kurtosis_comparison_hchart(box_width = 5),
-                          rolling_kurtosis_hchart(box_width = 12)
-                          )
-                        )
-              )
-             )
+js <- 
+"
+ .nav-tabs-custom .nav-tabs li.active {
+    border-top-color: #d73925;
+    }
+ 
+ @import url('//fonts.googleapis.com/css2?family=Roboto&display=swap');
+ * {font-family: Roboto;}
+"
+ui_footer <- function() {
+  tags$footer(
+    tags$strong("Net Zhang"), br(),
+    tags$text("E-Mail: zhang.11091@osu.edu | "), 
+    tags$u(
+      tags$a(href = "https://www.linkedin.com/in/net-zhang/?locale=en_US",
+             "LinkedIn", target="_blank")
     )
   )
+}
+ui_dashboard <- function() {
+  dashboardPage(
+    title = "Portfolio Terminal Lite",
+    skin = "black",
+    header = dashboardHeader(#titleWidth = 350, 
+      title = #"Portfolio Terminal Lite"
+        shinyDashboardLogo(
+          theme = "flat_red",
+          boldText = "Portfolio Terminal",
+          mainText = "Lite",
+          badgeText = "v1.1"
+        )
+    ),
+    # footer = dashboardFooter(
+    #   left = "By Net Zhang",
+    #   right = "zhang.11091@osu.edu"
+    # ),
+    sidebar = dashboardSidebar(
+      disable = T
+    ),
+    # collapse_sidebar = T,
+    # sidebar_fullCollapse = T,
+    body = dashboardBody(
+
+      tags$style(HTML(js)),
+      fluidRow(
+        # column(width = 3,
+        #        portfolio_table(),
+        #        asset_choice(collapsible = T)
+        #        ),
+        column(width = 1,
+               dropdownButton(
+                 portfolio_table(),
+                 asset_choice(collapsible = T),
+                 circle = TRUE, status = "danger",
+                 icon = icon("folder", lib = "font-awesome"), width = "700px",
+                 
+                 tooltip = tooltipOptions(title = "Manage Portfolio")
+               ),
+               # ------------ break -------------------------------- #
+               br(),
+               br(),
+               dropdownButton(
+                 box(width = 6,
+                     textInput("market", label = "Market Choice", value = "SPY")
+                 ),
+                 circle = TRUE, status = "danger",
+                 icon = icon("gear"), width = "700px",
+                 
+                 tooltip = tooltipOptions(title = "Modeling Toolkit")
+               )
+        ),
+        column(width = 5,
+               tabBox(
+                 title = "Returns",
+                 id = "tabset_returns", height = "100%", width = "100%",
+                 tabPanel("Asset Returns", 
+                          fluidRow(
+                            asset_return_hchart(box_width = 12)
+                          )
+                 ),
+                 tabPanel("Portfolio Returns", 
+                          fluidRow(
+                            portfolio_return_hchart(box_width = 12)
+                          )
+                 )
+               )
+        ),
+        column(width = 6,
+               tabBox(
+                 title = "Risks",
+                 id = "tabset_risks", height = "100%", width = "100%",
+                 tabPanel("Votility", 
+                          fluidRow(
+                            # column(width = 6, sd_overtime_hchart()),
+                            # column(width = 6, 
+                            #        return_vs_risk_hchart(),
+                            #        sd_comparision_hchart()
+                            #        )
+                            return_vs_risk_hchart(box_width = 7),
+                            sd_comparision_hchart(box_width = 5),
+                            sd_overtime_hchart(box_width = 12)
+                            # box(width = 12, rolling_volatility_hchart())
+                          )
+                 ),
+                 tabPanel("Skewness", 
+                          fluidRow(
+                            skew_density_hchart(box_width = 7),
+                            skew_comparison_hchart(box_width = 5),
+                            rolling_skew_hchart(box_width = 12)
+                          )
+                 ),
+                 tabPanel("Kurtosis",
+                          fluidRow(
+                            kurtosis_density_hc(box_width = 7),
+                            kurtosis_comparison_hchart(box_width = 5),
+                            rolling_kurtosis_hchart(box_width = 12)
+                          )
+                 )
+               )
+        )
+      )
+    )
+  )
+}
+
+ui <- tagList(
+  ui_dashboard(),
+  ui_footer()
 )
 
 # ======================================================================= #
@@ -272,7 +305,7 @@ variablesServer <- function(input, output, session){
     textInput(
       inputId = ns("variable"),
       label = paste0("Asset Choice #", strsplit(x = ns(""), split = "-")),
-      value = INITIAL_ASSET_CHOICES[round(runif(1, 1, 5))], # Randomly initialization
+      value = sample(sample(INITIAL_ASSET_CHOICES, 3), 1), # Randomly initialization
       width = "100%"
     )
   })
@@ -399,7 +432,7 @@ server <- function(input, output, session) {
     formattable(tbl,
                 align = c("c", "c"),
                 list(Asset = formatter("span", style = ~ style(color = "grey",font.weight = "bold")),
-                     Share = color_bar("lightblue")))
+                     Share = color_bar("#ff7f7f")))
   })
   
   # ========================================== #
@@ -459,12 +492,14 @@ server <- function(input, output, session) {
   
   output$asset_monthly_return <- renderHighchart({
     asset_returns <- asset_returns_xts()
-    plot_monthly_return_hchart(asset_returns)
+    plot_monthly_return_hchart(asset_returns) %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
   output$portfolio_monthly_return <- renderHighchart({
     portfolio_returns <- portfolio_returns_xts()
-    plot_monthly_return_hchart(portfolio_returns, title = "Portfolio Monthly Log Returns")
+    plot_monthly_return_hchart(portfolio_returns, title = "Portfolio Monthly Log Returns") %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
   # ========================================== #
@@ -474,19 +509,22 @@ server <- function(input, output, session) {
   # SD ----------------------------------------------------------------------------#
   output$sd_overtime <- renderHighchart({
     portfolio_returns <- portfolio_returns_xts()
-    plot_sd_overtime_hc(portfolio_returns)
+    plot_sd_overtime_hc(portfolio_returns) %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
   output$sd_comparison <- renderHighchart({
     asset_returns <- asset_returns_xts()
     ASSET_WEIGHTS <- asset_weights()
-    plot_sd_comparison_hc(asset_returns, ASSET_WEIGHTS)
+    plot_sd_comparison_hc(asset_returns, ASSET_WEIGHTS) %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
   output$return_vs_risk <- renderHighchart({
     asset_returns <- asset_returns_xts()
     ASSET_WEIGHTS <- asset_weights()
-    plot_return_vs_risk_hc(asset_returns, ASSET_WEIGHTS)
+    plot_return_vs_risk_hc(asset_returns, ASSET_WEIGHTS) %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
   # output$rolling_sd <- renderHighchart({
@@ -499,45 +537,53 @@ server <- function(input, output, session) {
   output$skew_density <- renderHighchart({
     
     portfolio_returns <- portfolio_returns_xts()
-    plot_skew_density_hc(portfolio_returns)
+    plot_skew_density_hc(portfolio_returns) %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
   output$skew_comparison <- renderHighchart({
     
     asset_returns <- asset_returns_xts()
     ASSET_WEIGHTS <- asset_weights()
-    plot_skew_comparison_hc(asset_returns, ASSET_WEIGHTS)
+    plot_skew_comparison_hc(asset_returns, ASSET_WEIGHTS) %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
   output$rolling_skew <- renderHighchart({
     
     portfolio_returns <- portfolio_returns_xts()
     portfolio_rolling_skew <- get_portfolio_rolling_skew(portfolio_returns, window = 24)
-    plot_rolling_skew_hc(portfolio_rolling_skew)
+    plot_rolling_skew_hc(portfolio_rolling_skew) %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
   # Kurtosis -------------------------------------------------------------------------#
   output$kurtosis_density <- renderHighchart({
     
     portfolio_returns <- portfolio_returns_xts()
-    plot_kurtosis_density_hc(portfolio_returns)
+    plot_kurtosis_density_hc(portfolio_returns) %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
   output$kurtosis_comparison <- renderHighchart({
     
     asset_returns <- asset_returns_xts()
     ASSET_WEIGHTS <- asset_weights()
-    plot_kurtosis_comparison_hc(asset_returns, ASSET_WEIGHTS)
+    plot_kurtosis_comparison_hc(asset_returns, ASSET_WEIGHTS) %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
   output$rolling_kurtosis <- renderHighchart({
     
     portfolio_returns <- portfolio_returns_xts()
     portfolio_rolling_kurtosis <- get_portfolio_rolling_kurtosis(portfolio_returns, window = 24)
-    plot_rolling_kurtosis_hc(portfolio_rolling_kurtosis)
+    plot_rolling_kurtosis_hc(portfolio_rolling_kurtosis) %>%
+      hc_add_theme(hc_theme_bloom())
   })
   
-  
+  # ========================================== #
+  # =========== Sharpe Ratio =================
+  # ========================================== #
   
   
   

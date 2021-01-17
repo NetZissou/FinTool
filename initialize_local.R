@@ -145,7 +145,9 @@ plot_rolling_skew_hc(portfolio_rolling_skew)
 # Kurtosis
 portfolio_kurtosis <- get_portfolio_kurtosis(portfolio_returns_tbl)
 portfolio_rolling_kurtosis <- get_portfolio_rolling_kurtosis(portfolio_returns_xts, window = 24)
-
+plot_kurtosis_density_hc(portfolio_returns_tbl)
+plot_kurtosis_comparison_hc(asset_returns_tbl, ASSET_WEIGHTS)
+plot_rolling_kurtosis_hc(portfolio_rolling_kurtosis)
 # =================================================================== #
 # ================== Sharpe Ratio ===================================
 # =================================================================== #
