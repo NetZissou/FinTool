@@ -12,6 +12,7 @@ library(lubridate)
 library(forcats)
 library(DT)
 library(formattable)
+library(rstack)
 # Fast computing --------------------------------------------------- #
 #library(collapse)    # fast data aggregation
 #library(data.table)  # Package loading and data manipulation
@@ -85,3 +86,8 @@ xts_to_tbl <- function(object) {
 mutual_funds <- read_csv("data/mutual_funds.csv")
 # INITIAL_ASSET_CHOICES <- mutual_funds %>% pull(Symbol)
 INITIAL_ASSET_CHOICES <- c("SPY", "EFA", "IJS", "EEM", "AGG", "AAPL")
+CHOICE_STACK <- stack$new()
+# reduce(INITIAL_ASSET_CHOICES, ~CHOICE_STACK$push(.x))
+for (x in INITIAL_ASSET_CHOICES) {
+  CHOICE_STACK$push(x)
+}

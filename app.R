@@ -305,7 +305,7 @@ variablesServer <- function(input, output, session){
     textInput(
       inputId = ns("variable"),
       label = paste0("Asset Choice #", strsplit(x = ns(""), split = "-")),
-      value = sample(sample(INITIAL_ASSET_CHOICES, 3), 1), # Randomly initialization
+      value = CHOICE_STACK$pop(), # Randomly initialization
       width = "100%"
     )
   })
