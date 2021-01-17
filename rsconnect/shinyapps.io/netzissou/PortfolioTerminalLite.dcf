@@ -1,0 +1,12 @@
+name: PortfolioTerminalLite
+title: PortfolioTerminalLite
+username:
+account: netzissou
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3482006
+bundleId: 4108587
+url: https://netzissou.shinyapps.io/PortfolioTerminalLite/
+when: 1610901521.43613
+asMultiple: FALSE
+asStatic: FALSE

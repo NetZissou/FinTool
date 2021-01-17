@@ -1,4 +1,4 @@
-# FinTool
+# [Portfolio Terminal Lite](https://netzissou.shinyapps.io/PortfolioTerminalLite/)
 Interactive toolkit for financial data analysis and portfolio management
 
 ## Returns
