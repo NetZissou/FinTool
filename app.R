@@ -207,15 +207,19 @@ ui_dashboard <- function() {
     # collapse_sidebar = T,
     # sidebar_fullCollapse = T,
     body = dashboardBody(
-
+      
+      useShinyjs(),
       tags$style(HTML(js)),
       fluidRow(
         # column(width = 3,
         #        portfolio_table(),
         #        asset_choice(collapsible = T)
         #        ),
+        
+        # ------------------------------ Tools ---------------------------------------------- #
         column(width = 1,
                dropdownButton(
+                 inputId = "portfolio_params",
                  portfolio_table(),
                  asset_choice(collapsible = T),
                  circle = TRUE, status = "danger",
@@ -227,6 +231,7 @@ ui_dashboard <- function() {
                br(),
                br(),
                dropdownButton(
+                 inputId = "model_params",
                  box(width = 6,
                      textInput("market", label = "Market Choice", value = "SPY")
                  ),
@@ -236,6 +241,8 @@ ui_dashboard <- function() {
                  tooltip = tooltipOptions(title = "Modeling Toolkit")
                )
         ),
+        
+        # ------------------------------ Returns + Models -------------------------------------- #
         column(width = 5,
                tabBox(
                  title = "Returns",
@@ -250,8 +257,15 @@ ui_dashboard <- function() {
                             portfolio_return_hchart(box_width = 12)
                           )
                  )
+               ),
+               tabBox(
+                 title = "Models",
+                 id = "tabset_models", height = "100%", width = "100%"
+                 # TODO: Adding components, Factors, MCMC
                )
         ),
+        
+        # ------------------------------ Risks ------------------------------------------------- #
         column(width = 6,
                tabBox(
                  title = "Risks",
@@ -453,6 +467,10 @@ server <- function(input, output, session) {
   #   return(symbols_price)
   # })
   
+  observe({
+    click("portfolio_params")
+    #invalidateLater(3000)
+  })
   # ========================================== #
   # =========== Returns ======================
   # ========================================== #
